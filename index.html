@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rutu X Elara Ai</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #000000; 
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden; 
+    }
+
+    /* --- Universal Full-Screen Overlays --- */
+    .full-screen-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      z-index: 200; 
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    /* --- CRITICAL FIX: Ensure Splash Screen is visible immediately --- */
+    #splash-screen {
+        display: flex;
+        opacity: 1;
+    }
+
+    /* --- Splash Screen Animations --- */
+
+    @keyframes riseAndFall {
+      0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+      50% { transform: translateY(0) scale(1.1); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    
+    @keyframes materialize {
+        0% { transform: translateY(30px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+
+    #app-icon {
+      font-size: 8rem; 
+      color: #3b82f6; 
+      animation: riseAndFall 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    }
+    #app-name {
+      margin-top: 1rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      opacity: 0;
+      animation: materialize 0.5s 1.5s forwards; 
+    }
+    #get-started-button {
+        opacity: 0;
+        animation: materialize 0.5s 2s forwards; 
+    }
+
+    /* --- Auth & Main Content Hiding --- */
+
+    body.auth-pending header,
+    body.auth-pending main,
+    #chat-form-wrapper {
+        display: none;
+    }
+
+    /* --- AUTH SCREEN CENTERING --- */
+    #auth-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.95);
+      z-index: 100;
+      display: none; 
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.3s ease;
+    }
+    .auth-box {
+      background-color: #111827;
+      border: 1px solid #374151;
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+    }
+
+    /* --- Header and Sidebar Styles --- */
+
+    header {
+        background-color: #111827 !important;
+        border-bottom: 1px solid #374151 !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem; 
+        z-index: 10;
+        width: 100%; 
+    }
+
+    .header-icon-btn {
+        color: #ffffff;
+        font-size: 1.25rem;
+        padding: 0.5rem;
+        transition: color 0.2s;
+        border-radius: 0.25rem;
+        line-height: 1; 
+    }
+    .header-icon-btn:hover {
+        color: #3b82f6;
+    }
+
+    /* Header Title Container - Center alignment for text and icons */
+    .header-title-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-grow: 1;
+        /* Padding adjustment to keep the total height balanced with side buttons */
+        padding: 0.25rem 0; 
+    }
+
+    /* Social Media Icons Style (New) */
+    .social-links a {
+        color: #ffffff;
+        font-size: 1rem;
+        margin: 0 0.5rem;
+        transition: color 0.2s;
+    }
+    .social-links a:hover {
+        color: #3b82f6; /* Blue hover color */
+    }
+    .social-links .fa-youtube {
+        color: #ff0000; /* YouTube Red */
+    }
+    .social-links .fa-instagram {
+        /* Default white or can use a gradient/specific color if needed */
+        color: #E1306C; /* Instagram Pink */
+    }
+
+
+    /* Sidebar/History Menu */
+    #history-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 280px;
+        background-color: #111827;
+        border-right: 1px solid #374151;
+        z-index: 50; 
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+        padding-top: 5rem; 
+        overflow-y: auto;
+    }
+    #history-sidebar.open {
+        transform: translateX(0);
+    }
+    .chat-history-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #1f2937;
+        transition: background-color 0.2s;
+    }
+    .chat-history-item:hover {
+        background-color: #1f2937;
+    }
+    .chat-history-item.active {
+        background-color: #3b82f6;
+    }
+
+    /* --- Chat and Utility Styles --- */
+
+    .chat-container {
+      max-height: calc(100vh - 10rem); 
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      padding-right: 1rem;
+    }
+    
+    #chat-form-wrapper {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #000000; 
+        padding: 0.5rem 1rem;
+        z-index: 10;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+    }
+    #chat-form {
+        max-width: 1000px; 
+        margin: 0 auto;
+    }
+
+    .user-message {
+      background-color: #1f2937;
+      color: #ffffff;
+      border-radius: 1rem 0.5rem 1rem 1rem;
+      box-shadow: none;
+    }
+    .ai-message {
+      background-color: #2c3140;
+      color: #ffffff;
+      border-radius: 0.5rem 1rem 1rem 1rem;
+      box-shadow: none;
+    }
+
+    /* --- User Input Background Color --- */
+    #user-input {
+      background-color: #000000; 
+      color: #ffffff; 
+      border: 1px solid #171717; 
+      transition: all 0.2s;
+    }
+    #user-input:focus {
+      border-color: #3b82f6; 
+      box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+    }
+    
+    .loader-rune {
+      border: 4px solid #4b5563;
+      border-top: 4px solid #9ca3af;
+      border-radius: 50%;
+      width: 20px; height: 20px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    #chat-form button { 
+        transition: background-color 0.2s; 
+        background-color: #3b82f6;
+        color: #ffffff;
+    }
+    #chat-form button:hover { 
+        transform: none;
+        box-shadow: none; 
+        background-color: #2563eb;
+    }
+
+    /* Profile Modal Styles */
+    #profile-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: #111827;
+      padding: 2rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+      max-width: 400px;
+      width: 90%;
+    }
+
+  </style>
+</head>
+<body class="flex flex-col min-h-screen auth-pending"> 
+<div id="mythical-background"></div>
+
+  <div id="splash-screen" class="full-screen-overlay">
+    <i id="app-icon" class="fas fa-robot"></i>
+    <h2 id="app-name">Rutu X Elara Ai</h2>
+    <button id="get-started-button" class="mt-16 p-3 px-8 rounded-full font-bold bg-blue-600 hover:bg-blue-700 transition">Start</button>
+  </div>
+
+  <div id="note-screen" class="full-screen-overlay p-8">
+    <div class="auth-box p-8 rounded-xl max-w-lg w-full text-left">
+        <h3 class="text-2xl font-bold mb-4 text-blue-400">App Details</h3>
+        
+        <p class="text-gray-400 italic mb-6">
+            <span class="font-bold text-red-400">Note:</span> This is a fan-made AI chat bot made by RutuDev.
+        </p>
+
+        <h4 class="text-xl font-bold mb-2">What's Here?</h4>
+        <p class="text-gray-300 leading-relaxed">
+            This Chatbot is a female chatbot. Her name is **Elara**, made by **RutuDev**. Elara has her own neural network brain, just like other chatbots, for example, ChatGPT. Elara is still under development.
+        </p>
+        
+        <button id="note-next-button" class="mt-8 p-3 px-8 rounded-full font-bold bg-blue-600 hover:bg-blue-700 transition float-right">Next</button>
+    </div>
+  </div>
+
+  <div id="device-select-screen" class="full-screen-overlay p-8">
+    <h3 class="text-3xl font-bold mb-10 text-blue-400">Choose Your Device</h3>
+    <div class="flex space-x-8">
+        <div id="device-mobile" data-device="mobile" class="device-option p-8 rounded-xl flex flex-col items-center">
+            <i class="fas fa-mobile-alt text-6xl mb-4"></i>
+            <span class="text-lg font-semibold">Mobile</span>
+        </div>
+        <div id="device-desktop" data-device="desktop" class="device-option p-8 rounded-xl flex flex-col items-center">
+            <i class="fas fa-desktop text-6xl mb-4"></i>
+            <span class="text-lg font-semibold">Desktop</span>
+        </div>
+    </div>
+  </div>
+
+  <div id="auth-screen">
+    <div class="auth-box p-8 rounded-xl max-w-sm w-full text-center">
+      <h2 class="text-3xl font-bold mb-6 text-blue-400">Rutu X Login</h2>
+      
+      <form id="auth-form" class="space-y-4">
+        <input type="email" id="auth-email" placeholder="Email" class="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white focus:border-blue-500 focus:outline-none" required />
+        <input type="password" id="auth-password" placeholder="Password" class="w-full p-3 rounded bg-gray-900 border border-gray-700 text-white focus:border-blue-500 focus:outline-none" required />
+        
+        <button type="submit" id="login-button" class="w-full p-3 rounded font-bold bg-blue-600 hover:bg-blue-700 transition">Log In</button>
+      </form>
+
+      <p class="text-gray-400 mt-4 text-sm">
+        <a href="#" id="toggle-signup" class="text-blue-400 hover:text-blue-300 transition">Need an account? Sign Up</a>
+      </p>
+      <div id="auth-message" class="mt-4 text-sm text-red-400 hidden"></div>
+    </div>
+  </div>
+  
+  <div id="history-sidebar">
+      <h3 class="text-xl font-bold px-4 mb-4 text-blue-400">Past Chats</h3>
+      <div id="history-list">
+          <div class="px-4 py-3 text-gray-400 text-sm">No past chats. Start a conversation!</div>
+      </div>
+  </div>
+
+  <header class="sticky top-0 z-10">
+    <button id="history-menu-btn" class="header-icon-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="header-title-container">
+        <h1 class="text-xl font-bold tracking-wide">Rutu X Elara Ai</h1>
+        <div class="social-links mt-1 flex space-x-3">
+            <a href="https://youtube.com/@rutudevedits?si=djl1FlofwE19EcOB" target="_blank" title="RutuDevEdits YouTube">
+                <i class="fab fa-youtube"></i>
+            </a>
+            <a href="https://www.instagram.com/yandere.rutu?igsh=MXZ5cXJudWRibDgzag==" target="_blank" title="Yandere.Rutu Instagram">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="flex space-x-2">
+        <button id="profile-btn" class="header-icon-btn" title="Profile & Account">
+            <i class="fas fa-user-circle"></i>
+        </button>
+        <button id="new-chat-btn" class="header-icon-btn" title="Start New Chat">
+            <i class="fas fa-pen-square"></i>
+        </button>
+    </div>
+  </header>
+
+  <main class="flex-grow p-4 flex flex-col relative">
+    <select id="server-select" title="AI Model Selector">
+      <option value="gemini">Gemini AI</option>
+    </select>
+
+    <div id="chat-messages" class="chat-container flex flex-col space-y-4 mb-4 flex-grow">
+      </div>
+
+    <div id="loading-indicator" class="flex items-center justify-center my-3 hidden">
+      <div class="loader-rune mr-2"></div>
+      <span class="text-gray-400 font-medium text-sm">Processing Request...</span>
+    </div>
+  </main>
+
+  <div id="chat-form-wrapper">
+    <form id="chat-form" class="flex space-x-3 bg-gray-900 p-3 rounded-lg shadow-inner">
+      <input type="text" id="user-input" placeholder="Enter your query..." class="flex-grow p-3 rounded-lg focus:outline-none text-base" required />
+      
+      <button type="button" id="voice-button" title="Voice Input">
+          <i class="fas fa-microphone text-xl"></i>
+      </button>
+
+      <button type="submit" class="font-bold py-2 px-4 rounded-lg">Send</button>
+    </form>
+  </div>
+  
+  <div id="error-box" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 p-3 rounded text-center bg-red-700 text-white hidden z-20 shadow-lg" role="alert"></div>
+
+  <div id="profile-modal">
+    <div class="modal-content text-center">
+        <h3 class="text-2xl font-bold mb-4 text-blue-400">User Profile</h3>
+        <div class="mb-6">
+            <i class="fas fa-user-circle text-6xl text-gray-400 mb-3"></i>
+            <p class="text-lg font-medium text-gray-200">Logged in as:</p>
+            <p id="profile-email" class="text-xl font-bold text-white break-words"></p>
+        </div>
+        <button id="logout-btn-modal" class="w-full p-3 rounded font-bold bg-red-600 hover:bg-red-700 transition">Log Out</button>
+        <button id="close-profile-modal" class="mt-4 w-full p-3 rounded font-bold bg-gray-700 hover:bg-gray-600 transition">Close</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-analytics.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCrlw7zhxGxDJf3OVnhzDgSmde2HsLdxvA",
+      authDomain: "login-process-8e0bf.firebaseapp.com",
+      projectId: "login-process-8e0bf",
+      storageBucket: "login-process-8e0bf.firebasestorage.app",
+      messagingSenderId: "77736675668",
+      appId: "1:77736675668:web:96329982b5f239fa04a0c1",
+      measurementId: "G-XW58SX9S8L"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+
+    window.auth = getAuth(app);
+    window.db = getFirestore(app);
+    window.app = app; 
+  </script>
+
+  <script>
+    // --- Element & State Declarations ---
+    const splashScreen = document.getElementById("splash-screen");
+    const getStartedButton = document.getElementById("get-started-button");
+    const noteScreen = document.getElementById("note-screen");
+    const noteNextButton = document.getElementById("note-next-button");
+    const deviceSelectScreen = document.getElementById("device-select-screen");
+    const deviceOptions = document.querySelectorAll('.device-option');
+    const authScreen = document.getElementById("auth-screen");
+    const historySidebar = document.getElementById("history-sidebar");
+    const historyList = document.getElementById("history-list");
+    const historyMenuBtn = document.getElementById("history-menu-btn");
+    const newChatBtn = document.getElementById("new-chat-btn");
+    const profileBtn = document.getElementById("profile-btn");
+    const profileModal = document.getElementById("profile-modal");
+    const profileEmailDisplay = document.getElementById("profile-email");
+    const logoutBtnModal = document.getElementById("logout-btn-modal");
+    const closeProfileModal = document.getElementById("close-profile-modal");
+    const chatMessages = document.getElementById("chat-messages");
+    const chatForm = document.getElementById("chat-form");
+    const userInput = document.getElementById("user-input");
+    const loadingIndicator = document.getElementById("loading-indicator");
+    const errorBox = document.getElementById("error-box");
+    const voiceButton = document.getElementById("voice-button");
+    const chatFormWrapper = document.getElementById("chat-form-wrapper");
+    const geminiKey = "AIzaSyAiPoZYXewoLrXeDD3fO8M_d0FByvINi_4";
+
+    const authForm = document.getElementById("auth-form");
+    const authEmail = document.getElementById("auth-email");
+    const authPassword = document.getElementById("auth-password");
+    const loginButton = document.getElementById("login-button");
+    const toggleSignup = document.getElementById("toggle-signup");
+    const authMessage = document.getElementById("auth-message");
+    
+    let isSigningUp = false;
+    let loggedInUser = null; 
+    let selectedDevice = 'desktop'; 
+    let currentChatId = 'new'; 
+    
+    const synth = window.speechSynthesis;
+    let recognition = null; 
+    let femaleVoice = null; 
+    let isVoiceInput = false;
+
+    // --- Screen Flow Logic ---
+
+    function showScreen(screenElement) {
+        // Hides all full-screen overlays
+        [splashScreen, noteScreen, deviceSelectScreen, authScreen].forEach(el => {
+            if(el) { 
+                el.style.opacity = '0';
+                el.style.display = 'none';
+                el.classList.remove('active');
+            }
+        });
+        
+        // Shows the target screen
+        if (screenElement) {
+            screenElement.style.display = 'flex';
+            screenElement.classList.add('active');
+            setTimeout(() => {
+                screenElement.style.opacity = '1';
+            }, 50);
+        }
+    }
+    
+    function hideSplashScreen() {
+         // Use CSS class to trigger the transition
+        splashScreen.style.opacity = '0';
+        setTimeout(() => {
+            splashScreen.style.display = 'none';
+        }, 500); // Wait for the transition duration
+    }
+
+    // Function to check for a saved session
+    function checkSavedSession() {
+        const savedUser = localStorage.getItem('lastLoggedInUser');
+        const savedDevice = localStorage.getItem('lastSelectedDevice');
+
+        if (savedUser) {
+            loggedInUser = savedUser;
+            selectedDevice = savedDevice || 'desktop';
+            
+            // Skip onboarding/login and go straight to chat
+            hideSplashScreen(); 
+            document.body.classList.remove('auth-pending');
+            chatFormWrapper.style.display = 'block';
+            loadUserChat();
+        } else {
+            // No saved session, proceed to the first step of onboarding
+            showScreen(noteScreen);
+        }
+    }
+
+    // --- Logout Handler ---
+    function handleLogout() {
+        localStorage.removeItem('lastLoggedInUser');
+        loggedInUser = null;
+        currentChatId = 'new';
+        
+        // Hide modal and main content
+        profileModal.style.display = 'none';
+        document.body.classList.add('auth-pending'); 
+        
+        // Show the splash screen to allow a fresh flow
+        splashScreen.style.display = 'flex';
+        splashScreen.style.opacity = '1';
+        
+        // Reset the state to force user to click "Start" again
+        getStartedButton.removeEventListener('click', checkSavedSessionFlow);
+        getStartedButton.addEventListener('click', () => {
+             hideSplashScreen();
+             checkSavedSession(); // This will lead to the Note Screen now
+        });
+    }
+
+    // --- Profile Modal Functions ---
+    function showProfileModal() {
+        profileEmailDisplay.textContent = loggedInUser || 'N/A';
+        profileModal.style.display = 'flex';
+    }
+
+    function closeProfileModalHandler() {
+        profileModal.style.display = 'none';
+    }
+
+
+    // --- CRITICAL FIX: Only run the check after the splash animation finishes ---
+    function checkSavedSessionFlow() {
+        hideSplashScreen();
+        checkSavedSession();
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        // Wait 2.5 seconds (animation duration) before enabling the button listener
+        setTimeout(() => {
+            getStartedButton.addEventListener('click', checkSavedSessionFlow);
+        }, 2500);
+    });
+    
+    // Original flow for first-time users 
+    noteNextButton.addEventListener('click', () => {
+        showScreen(deviceSelectScreen);
+    });
+    
+    deviceOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            deviceOptions.forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+            selectedDevice = this.dataset.device;
+            
+            localStorage.setItem('lastSelectedDevice', selectedDevice); 
+
+            setTimeout(() => {
+                showScreen(authScreen);
+            }, 500);
+        });
+    });
+
+    // --- Authentication & Login ---
+
+    function handleLoginSuccess(identifier) {
+        loggedInUser = identifier; 
+        
+        // SAVE SESSION: Save the login state to skip future logins
+        localStorage.setItem('lastLoggedInUser', identifier);
+        
+        authScreen.style.opacity = '0';
+        setTimeout(() => {
+            authScreen.style.display = 'none';
+            document.body.classList.remove('auth-pending'); 
+            chatFormWrapper.style.display = 'block';
+            loadUserChat();
+        }, 300);
+    }
+
+    function loadUsers() {
+        try {
+            const users = localStorage.getItem('chatUsers');
+            return users ? JSON.parse(users) : [];
+        } catch (e) {
+            console.error("Error loading users from localStorage:", e);
+            return [];
+        }
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem('chatUsers', JSON.stringify(users));
+    }
+
+    function displayAuthMessage(message, isError = true) {
+        authMessage.textContent = message;
+        authMessage.className = `mt-4 text-sm ${isError ? 'text-red-400' : 'text-green-400'}`;
+        authMessage.classList.remove('hidden');
+    }
+
+    toggleSignup.addEventListener('click', (e) => {
+        e.preventDefault();
+        isSigningUp = !isSigningUp;
+        authMessage.classList.add('hidden');
+        if (isSigningUp) {
+            loginButton.textContent = 'Sign Up';
+            toggleSignup.innerHTML = 'Already have an account? Log In';
+        } else {
+            loginButton.textContent = 'Log In';
+            toggleSignup.innerHTML = 'Need an account? Sign Up';
+        }
+        authEmail.value = '';
+        authPassword.value = '';
+    });
+
+    authForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = authEmail.value.trim().toLowerCase();
+        const password = authPassword.value;
+        authMessage.classList.add('hidden');
+
+        let users = loadUsers();
+
+        if (isSigningUp) {
+            if (users.some(u => u.email === email)) {
+                displayAuthMessage("Error: Account already exists.");
+                return;
+            }
+            users.push({ email, password }); 
+            saveUsers(users);
+            displayAuthMessage("Sign Up successful! You are now logged in.", false);
+            handleLoginSuccess(email); 
+        } else {
+            const user = users.find(u => u.email === email && u.password === password);
+            if (user) {
+                handleLoginSuccess(email); 
+            } else {
+                displayAuthMessage("Error: Invalid email or password.");
+            }
+        }
+    });
+
+    // --- Chat History Functions ---
+
+    function generateChatId() {
+        return `chat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    }
+
+    function getStorageKey(email) {
+        return `chatSessions_${email}`;
+    }
+
+    function saveAllChatSessions(identifier, sessions) {
+        try {
+            localStorage.setItem(getStorageKey(identifier), JSON.stringify(sessions));
+        } catch (e) {
+            console.error("Error saving chat sessions to localStorage:", e);
+        }
+    }
+
+    function loadAllChatSessions(identifier) {
+        try {
+            const sessions = localStorage.getItem(getStorageKey(identifier));
+            return sessions ? JSON.parse(sessions) : [];
+        } catch (e) {
+            console.error("Error loading chat sessions from localStorage:", e);
+            return [];
+        }
+    }
+
+    function renderHistoryList(sessions) {
+        historyList.innerHTML = '';
+        if (sessions.length === 0) {
+            historyList.innerHTML = '<div class="px-4 py-3 text-gray-400 text-sm">No past chats. Start a conversation!</div>';
+            return;
+        }
+
+        sessions.forEach(session => {
+            const item = document.createElement('div');
+            item.className = 'chat-history-item truncate';
+            item.dataset.chatId = session.id;
+            item.title = session.title;
+            item.textContent = session.title;
+
+            if (session.id === currentChatId) {
+                item.classList.add('active');
+            }
+
+            item.addEventListener('click', () => {
+                loadChatSession(session.id);
+                historySidebar.classList.remove('open');
+            });
+            historyList.appendChild(item);
+        });
+    }
+
+    function loadChatSession(chatId) {
+        const sessions = loadAllChatSessions(loggedInUser);
+        const session = sessions.find(s => s.id === chatId);
+        
+        if (session) {
+            currentChatId = chatId;
+            chatMessages.innerHTML = '';
+            
+            session.history.forEach(item => {
+                addMessage(item.text, item.sender);
+            });
+            renderHistoryList(sessions);
+        } else {
+            startNewChat(false); 
+        }
+    }
+
+    function startNewChat(forceSavePrevious = true) {
+        if (forceSavePrevious && currentChatId !== 'new') {
+            saveMessage(null, null); 
+        }
+        
+        currentChatId = generateChatId();
+        chatMessages.innerHTML = '';
+        addMessage(`Hello! I am Elara, the Rutu X AI Analyst. I am ready for your professional inquiry.`, "ai");
+        renderHistoryList(loadAllChatSessions(loggedInUser));
+    }
+
+    function loadUserChat() {
+        // Find the most recent chat or start a new one
+        const sessions = loadAllChatSessions(loggedInUser);
+        if (sessions.length > 0) {
+             loadChatSession(sessions[0].id);
+             addMessage(`Welcome back, ${loggedInUser.split('@')[0]}! I've loaded your last session.`, "ai");
+        } else {
+             startNewChat(false);
+        }
+        renderHistoryList(sessions);
+    }
+    
+    function saveMessage(text, sender) {
+        if (!loggedInUser) return;
+        
+        let sessions = loadAllChatSessions(loggedInUser);
+        let sessionIndex = sessions.findIndex(s => s.id === currentChatId);
+
+        let session = sessionIndex !== -1 ? sessions[sessionIndex] : {
+            id: currentChatId,
+            history: [],
+            timestamp: Date.now(),
+            title: "New Chat" 
+        };
+
+        if (text && sender) {
+            session.history.push({ text, sender });
+            
+            // Only title a chat on the first user message
+            if (session.history.filter(m => m.sender === 'user').length === 1 && sender === 'user') {
+                session.title = text.substring(0, 30) + (text.length > 30 ? "..." : "");
+            }
+        } else if (session.history.length === 0) {
+             // Don't save empty sessions
+             return; 
+        }
+        
+        // Update session list: Move current chat to top or add new one
+        if (sessionIndex === -1) {
+            sessions.unshift(session);
+        } else {
+            sessions.splice(sessionIndex, 1);
+            sessions.unshift(session);
+        }
+
+        saveAllChatSessions(loggedInUser, sessions);
+        renderHistoryList(sessions); 
+    }
+    
+    // --- Core Utility Functions ---
+
+    function formatText(text) {
+      return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-300">$1</strong>')
+        .replace(/\*(.*?)\*/g, "<em>$1</em>")
+        .replace(/^\s*-\s*(.*)$/gm, '<div class="flex items-start mt-1"><span class="mr-2 text-gray-500">•</span> $1</div>')
+        .replace(/\n/g, "<br>");
+    }
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = `flex ${sender === "user" ? "justify-end" : "justify-start"} chat-message-item`;
+      const bubble = document.createElement("div");
+      const maxWidthClass = sender === "ai" ? "md:max-w-3xl" : "md:max-w-xl";
+      bubble.className = `p-3 shadow-md transition duration-200 ${maxWidthClass} ${sender === "user" ? "user-message" : "ai-message"}`;
+      
+      if (sender === "ai") {
+        bubble.innerHTML = `<span class="text-blue-400 font-bold">The Analyst:</span> ${formatText(text)}`;
+      } else {
+        bubble.textContent = text;
+      }
+      
+      msg.appendChild(bubble);
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showError(msg, type="red") {
+      errorBox.textContent = msg;
+      errorBox.className = `fixed bottom-20 left-1/2 transform -translate-x-1/2 p-3 rounded text-center text-white z-20 shadow-lg`;
+      if (type === "red") errorBox.classList.add("bg-red-700", "animate-pulse");
+      else errorBox.classList.add("bg-green-600");
+      errorBox.classList.remove("hidden");
+      setTimeout(() => errorBox.classList.add("hidden"), 4000);
+    }
+
+    async function fetchWithRetry(url, options, maxRetries=3) {
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          if (response.status !== 429) return response;
+          await new Promise(r => setTimeout(r, Math.pow(2, attempt)*1000 + Math.random()*1000));
+        } catch(e) {
+          if (attempt === maxRetries - 1) throw e;
+        }
+      }
+      throw new Error("Max retries exceeded for API call.");
+    }
+
+    async function queryGemini(prompt) {
+      // **Note:** Gemini API call details are hardcoded for this demo.
+      const payload = { contents: [{ parts: [{ text: prompt }] }] };
+      const res = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error(`Gemini API error: ${res.status} ${res.statusText || ''}`);
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini.";
+    }
+
+    // --- Event Listeners (Chat History, Profile, Logout) ---
+
+    historyMenuBtn.addEventListener('click', () => {
+        renderHistoryList(loadAllChatSessions(loggedInUser));
+        historySidebar.classList.toggle('open');
+    });
+
+    // Confirmation for new chat
+    newChatBtn.addEventListener('click', () => {
+        if (currentChatId !== 'new' && chatMessages.children.length > 1) {
+             const confirmNew = confirm("Are you sure you want to start a new chat? Your current conversation will be saved.");
+             if (confirmNew) {
+                 startNewChat(true); 
+             }
+        } else {
+             startNewChat(false);
+        }
+    });
+
+    // Profile and Logout Listeners
+    profileBtn.addEventListener('click', showProfileModal);
+    logoutBtnModal.addEventListener('click', handleLogout);
+    closeProfileModal.addEventListener('click', closeProfileModalHandler);
+    profileModal.addEventListener('click', (e) => {
+        if (e.target.id === 'profile-modal') {
+            closeProfileModalHandler();
+        }
+    });
+
+
+    document.addEventListener('click', (e) => {
+        if (historySidebar.classList.contains('open') && 
+            !historySidebar.contains(e.target) && 
+            !historyMenuBtn.contains(e.target) &&
+            !newChatBtn.contains(e.target) && 
+            !profileBtn.contains(e.target)) { 
+            historySidebar.classList.remove('open');
+        }
+    });
+
+    voiceButton.addEventListener('click', startVoiceRecognition);
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prompt = userInput.value.trim();
+      if(!prompt || !loggedInUser) return;
+
+      const shouldSpeak = isVoiceInput; 
+
+      addMessage(prompt, "user");
+      saveMessage(prompt, "user"); 
+      userInput.value = "";
+      loadingIndicator.classList.remove("hidden");
+
+      if (synth.speaking) synth.cancel();
+
+      try {
+        const responseText = await queryGemini(prompt);
+        
+        addMessage(responseText, "ai");
+        saveMessage(responseText, "ai"); 
+        
+        if (shouldSpeak) {
+            speakResponse(responseText);
+        }
+
+      } catch(err) {
+        console.error("Fetch Error:", err);
+        const errorMsg = `The Analyst Error: Could not connect to the Gemini AI service. (${err.message})`;
+        
+        addMessage(errorMsg, "ai");
+        showError(`API Error: ${err.message}`, "red"); 
+        
+        if (shouldSpeak) {
+            speakResponse("I apologize, I encountered a connection error. Please try asking again.");
+        }
+
+      } finally {
+        loadingIndicator.classList.add("hidden");
+        isVoiceInput = false; 
+      }
+    });
+
+    // --- Voice Functions (Kept for completeness) ---
+    function initializeVoice() {
+      const voices = synth.getVoices();
+      femaleVoice = voices.find(voice => 
+        voice.lang.startsWith('en') && 
+        (voice.name.includes('female') || voice.name.includes('Feminine') || voice.name.includes('Alice') || voice.name.includes('Google US English'))
+      ) || voices.find(voice => voice.lang.startsWith('en') && voice.default);
+    }
+    synth.onvoiceschanged = initializeVoice;
+    if (synth.getVoices().length > 0) {
+        initializeVoice();
+    }
+
+    function speakResponse(text) {
+      if (synth.speaking) synth.cancel();
+      
+      const cleanText = text.replace(/\*\*/g, '').replace(/<br>/g, ' '); 
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.voice = femaleVoice;
+      utterance.rate = 0.95; 
+      utterance.pitch = 1.1; 
+      synth.speak(utterance);
+    }
+
+    function startVoiceRecognition() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showError("Your browser does not support Speech Recognition.", "red");
+        return;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (recognition && voiceButton.classList.contains('recording')) {
+          recognition.stop();
+          return;
+      }
+
+      recognition = new SpeechRecognition();
+      
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.continuous = false;
+
+      if (synth.speaking) synth.cancel();
+
+      voiceButton.classList.add('recording');
+      userInput.placeholder = "Listening... Speak now.";
+      userInput.disabled = true;
+
+      recognition.onresult = function(event) {
+        const last = event.results.length - 1;
+        const speechResult = event.results[last][0].transcript;
+        userInput.value = speechResult;
+        userInput.disabled = false;
+        
+        isVoiceInput = true;
+        chatForm.dispatchEvent(new Event('submit', { cancelable: true })); 
+      };
+
+      recognition.onend = function() {
+        voiceButton.classList.remove('recording');
+        userInput.placeholder = "Enter your query...";
+        userInput.disabled = false;
+      };
+
+      recognition.onerror = function(event) {
+        voiceButton.classList.remove('recording');
+        userInput.placeholder = "Enter your query...";
+        userInput.disabled = false;
+        showError(`Voice Error: ${event.error}`, "red");
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {
+        console.error("Recognition start error:", e);
+        voiceButton.classList.remove('recording');
+        userInput.placeholder = "Enter your query...";
+        userInput.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
